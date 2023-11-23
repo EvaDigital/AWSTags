@@ -110,7 +110,7 @@ def getresourses_by_name(event):
 
         resources = response.get('ResourceTagMappingList', [])
         
-        filtered_resources = [resource for resource in resources if 'ResourceARN' in resource and response_name in resource['ResourceARN'].split(':')[-1]]
+        filtered_resources = [resource for resource in resources if 'ResourceARN' in resource and any(tag['Key'].lower() == response_name.lower() for tag in resource.get('Tags', []))]
 
         arn_list = [{'arn': resource['ResourceARN'], 'tags': resource['Tags']} for resource in filtered_resources]
 

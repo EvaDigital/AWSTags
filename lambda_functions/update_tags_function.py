@@ -8,12 +8,14 @@ def lambda_handler(event, context):
         arn = body['arn']
         new_tags = body.get('new_tags', None)
         delete_tags = body.get('delete_tags', None)
+        arn_parts = arn.split(":")
+        region = arn_parts[3]
         
         if delete_tags:
             delete_tags_func(arn, delete_tags)
         
         if new_tags:
-            update_tags(arn, new_tags)
+            update_tags(arn, new_tags, region)
 
         response = {
             'statusCode': 200,
@@ -33,8 +35,8 @@ def lambda_handler(event, context):
 
     return response
 
-def update_tags(arn, new_tags):
-    client = boto3.client('resourcegroupstaggingapi')
+def update_tags(arn, new_tags, region):
+    client = boto3.client('resourcegroupstaggingapi', region_name=region)
     response = client.tag_resources(
         ResourceARNList=[arn],
         Tags=new_tags
