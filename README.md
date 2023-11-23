@@ -70,7 +70,7 @@ $ source env/bin/activate
 If you are a Windows platform, you would activate the virtualenv like this:
 
 ```
-% env\Scripts\activate.bat
+% .\env\Scripts\activate
 ```
 
 ## 6. Install dependencies
@@ -87,6 +87,7 @@ $ cdk synth
 
 ## 8. Deploy the project
 ```
+$ cdk bootstrap
 $ cdk deploy
 ```
 Upon successful deployment, you will receive outputs, and among them, you'll find a link to your deployed application. For example:
