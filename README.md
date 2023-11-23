@@ -1,3 +1,33 @@
+# Setting Up Development Environment
+
+Follow these steps to set up your development environment on Windows. Make sure to install the necessary tools for a seamless development experience
+
+## Installing Node.js and npm:
+### Node.js
+Download the Node.js installer from the [official website](https://nodejs.org/en)
+Run the installer and follow the installation instructions.
+
+### Check the installation
+Open the command prompt and run the following commands:
+```
+node -v
+npm -v
+```
+Verify that Node.js and npm are installed successfully.
+
+### Python
+Download the Python installer from the [official website](https://www.python.org/)
+Run the installer and select the "Add Python to PATH" option during installation.
+
+### Check the installation
+Open the command prompt and run the following commands:
+```
+python --version
+pip --version
+```
+Confirm the successful installation of Python and pip.
+
+Now, your development environment is ready for action.
 
 # Deployment Guide!
 
