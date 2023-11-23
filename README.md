@@ -87,6 +87,7 @@ $ cdk synth
 
 ## 8. Deploy the project
 ```
+$ cdk bootstrap
 $ cdk deploy
 ```
 Upon successful deployment, you will receive outputs, and among them, you'll find a link to your deployed application. For example:
