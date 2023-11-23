@@ -30,13 +30,13 @@ After the init process completes and the virtualenv is created, you can use the 
 step to activate your virtualenv.
 
 ```
-$ source .venv/bin/activate
+$ source env/bin/activate
 ```
 
 If you are a Windows platform, you would activate the virtualenv like this:
 
 ```
-% .venv\Scripts\activate.bat
+% env\Scripts\activate.bat
 ```
 
 ## 6. Install dependencies
