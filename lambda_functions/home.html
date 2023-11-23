@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ARN List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  </head>
+  <style>
+     .center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 10px;
+    }
+    .lds-ring {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 80px;
+    }
+    .lds-ring div {
+        box-sizing: border-box;
+        display: block;
+        position: absolute;
+        width: 64px;
+        height: 64px;
+        margin: 8px;
+        border: 8px solid #383434;
+        border-radius: 50%;
+        animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        border-color: #383434 transparent transparent transparent;
+    }
+    .lds-ring div:nth-child(1) {
+        animation-delay: -0.45s;
+    }
+    .lds-ring div:nth-child(2) {
+        animation-delay: -0.3s;
+    }
+    .lds-ring div:nth-child(3) {
+        animation-delay: -0.15s;
+    }
+    @keyframes lds-ring {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    input {
+        
+        box-sizing: border-box;
+        border: none;
+        outline: none;
+    }
+
+    .dropdown-custom {
+        max-height: 300px;
+        overflow-x: auto;
+    }
+
+    .tableFixHead          { overflow: auto; height: 700px; }
+    .tableFixHead thead th { position: sticky; top: 0; z-index: 1; }
+
+    table  { border-collapse: collapse; width: 100%; }
+    th, td { padding: 8px 16px; }
+    th     { background:#eee; }
+
+
+  </style>
+  <body style="background-color: #ffffff;">
+    <div class="container">
+        <h1>Resources</h1>
+        <div class="center" id="loader">
+            <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+        </div>
+        <div class="row" style="justify-content: end;">
+            <div class="col-3">
+                <form onsubmit="search(); return false">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" placeholder="Resourse name" id="resourse_name" aria-label="Resourse name" aria-describedby="button-addon2">
+                        <input type="submit" class="btn btn-outline-secondary" type="button" id="button-addon2" value="Search">
+                    </div>
+                </form>
+            </div>
+            <div class="col-1" style="margin-right: -1.4em;">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                      Tags
+                    </button>
+                    <ul class="dropdown-menu dropdown-custom" id="dropdown-menu-tags">
+                        <li><a class="dropdown-item" href="#" onclick="getArnsByTags('all')">All</a></li>
+                    </ul>
+                  </div>
+            </div>
+            <div class="col-1" style="margin-right: 0.6em;">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        Resourse
+                    </button>
+                    <ul class="dropdown-menu dropdown-custom" id="dropdown-menu-resourses">
+                        <li><a class="dropdown-item" href="#" onclick="getArnsByTags('all')">All</a></li>
+                    </ul>
+                  </div>
+            </div>
+            <div class="col-1">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        Regions
+                    </button>
+                    <ul class="dropdown-menu dropdown-custom" id="dropdown-menu-regions"></ul>
+                  </div>
+            </div>
+            <div class="col-2" style="width: 140px;">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="getArnsByTags('all')">
+                        Clear filters
+                    </button>
+                  </div>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: end; margin-bottom: 1em;">
+            <button type="button" id="addTagsButton" class="btn btn-primary" style="width: 200px; margin-right: 0.5em;">
+                Add Tags
+            </button>
+            <button type="button" id="saveButton" class="btn btn-success" onclick="saveTags()" style="width: 225px;">
+                Save
+            </button>
+        </div>
+        
+        <div class="tableFixHead" id="tableContainer">
+            <table class="table-hover table table-bordered" id="artTable">
+                <thead>
+                    <tr id="tableHeader"></tr>
+                </thead>
+                <tbody id="arnList"></tbody>
+            </table>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.2/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsonlint/1.6.0/jsonlint.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/codemirror.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.62.0/mode/javascript/javascript.min.js"></script>
+
+    <script>
+        const apiUrl = localStorage.getItem('apiUrl');
+        const login = localStorage.getItem('login');
+        if (login === null || login === undefined || login === 'false') {
+            window.location.href = `${apiUrl}/index/login`;
+        }
+
+        const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+
+        const requestOptions = {
+                method: 'GET',
+                headers: myHeaders,
+                redirect: 'follow'
+        };
+
+        function ClearTableAndOnLoader() {
+            const tableHeader = document.getElementById('tableHeader');
+            tableHeader.innerHTML = '';
+
+            const arnList = document.getElementById('arnList');
+            arnList.innerHTML = '';
+
+            const loaderElement = document.getElementById("loader");
+            loaderElement.style.display = "block";
+        }
+
+       
+        function getAWSTags(resources) {
+                const nonAwsTags = new Set();
+
+                resources.forEach(resource => {
+                    resource.tags.forEach(tag => {
+                        if (!tag.Key.startsWith("aws:")) {
+                            nonAwsTags.add(tag.Key);
+                        }
+                    });
+                });
+
+                return Array.from(nonAwsTags);
+            }
+
+       
+        function generateArnsList(result) {
+            const arnList = document.getElementById('arnList');
+            arnList.innerHTML = '';
+
+            if (result.resources && result.resources.length > 0) {
+                const arnListContainer = document.getElementById("arnList");
+
+                function getNonAWSTags(resources) {
+                        const nonAwsTags = new Set(['Id']);
+
+                        resources.forEach(resource => {
+                            resource.tags.forEach(tag => {
+                                if (!tag.Key.startsWith("aws:")) {
+                                    nonAwsTags.add(tag.Key);
+                                }
+                            });
+                        });
+
+                        return Array.from(nonAwsTags);
+                    }
+
+                const uniqueAWSTags = getNonAWSTags(result.resources);
+                const tableHeader = document.getElementById('tableHeader');
+                uniqueAWSTags.forEach(tag => {
+                    const header = document.createElement("th");
+                    header.style = 'background-color: #e7e7e7; white-space: nowrap;';
+
+                    const input = document.createElement("input");
+                    input.type = "text";
+                    input.value = tag
+                    input.style = 'background-color: #e7e7e7;'
+                    header.appendChild(input);
+                    tableHeader.appendChild(header);
+                });
+
+                const tableBody = document.getElementById('arnList');
+                    result.resources.forEach(resource => {
+                        const row = document.createElement("tr");
+                        const idCell = document.createElement("td");
+                        idCell.textContent = resource.arn
+                        idCell.style = 'white-space: nowrap'
+
+                        row.appendChild(idCell);
+
+                        uniqueAWSTags.forEach(tag => {
+                            if (tag !== 'Id'){
+                                const cell = document.createElement("td");
+                                const matchingTag = resource.tags.find(t => t.Key === tag);
+
+                                const input = document.createElement("input");
+                                input.type = "text";
+                                input.value = matchingTag ? matchingTag.Value : '';
+                                cell.appendChild(input);
+
+                                row.appendChild(cell);
+                            }
+                            
+                        });
+
+                        tableBody.appendChild(row);
+                });
+
+                const loaderElement = document.getElementById("loader");
+                loaderElement.style.display = "none";
+
+            } else {
+                const loaderElement = document.getElementById("loader");
+                loaderElement.style.display = "none";
+
+                const arnListContainer = document.getElementById("arnList");
+                const row = arnListContainer.insertRow();
+                row.style = 'text-align: center;'
+                const cell = row.insertCell(0);
+                cell.colSpan = 3;
+                cell.textContent = "No data";
+                arnListContainer.appendChild(row)
+            }
+
+        }
+
+        document.getElementById("addTagsButton").addEventListener("click", function() {
+            const table = document.getElementById("artTable");
+            const tableContainer = document.getElementById("tableContainer");
+
+            const rows = table.querySelectorAll("tbody tr");
+            const currentWidth = tableContainer.scrollWidth;
+
+            const tableHeader = document.getElementById('tableHeader')
+            const hederKey = document.createElement("th");
+            const input = document.createElement("input");
+            input.type = "text";
+            input.value = "";
+            input.style = 'background-color: #e7e7e7;'
+            hederKey.appendChild(input)
+            hederKey.style = 'background-color: #e7e7e7;'
+            tableHeader.appendChild(hederKey)
+            
+            rows.forEach((row) => {
+                const cellKey = document.createElement("td");
+                const inputKey = document.createElement("input");
+                inputKey.type = "text";
+                inputKey.value = ""
+                
+                cellKey.appendChild(inputKey);
+                row.appendChild(cellKey);
+            });
+            const newWidth = tableContainer.scrollWidth;
+
+            tableContainer.scrollLeft = newWidth + currentWidth;
+
+        });
+
+        fetch(`${apiUrl}/getresourses?page_number=1`, requestOptions)
+            .then(response => response.json())
+            .then(result => {
+                generateArnsList(result)
+            })
+            .catch(error => console.log('error', error));
+
+        function onPageButtonClick(page) {
+            fetch(`${apiUrl}/getresourses?page_number=${page}`, requestOptions)
+            .then(response => response.json())
+            .then(result => {
+                generateArnsList(result)
+            })
+            .catch(error => console.log('error', error));
+        }
+
+        fetch(`${apiUrl}/getresourses/get-tags-keys`, requestOptions)
+            .then(response => response.json())
+            .then(result => {
+                generateTagsList(result)
+            })
+            
+            .catch(error => console.log('error', error));
+
+        function generateTagsList(tagsList) {
+            const dropdownMenu = document.getElementById('dropdown-menu-tags');
+            
+            tagsList.keys.forEach(tagKey => {
+                
+                if (!tagKey.startsWith("aws:")) {
+                    const listItem = document.createElement('li');
+                    const linkItem = document.createElement('a');
+                    linkItem.classList.add('dropdown-item');
+                    linkItem.href = '#'; 
+                    linkItem.textContent = tagKey;
+
+                    linkItem.addEventListener("click", function() {
+                        getArnsByTags(tagKey)
+                    });
+
+                    listItem.appendChild(linkItem);
+                    dropdownMenu.appendChild(listItem);
+                }
+                
+            });
+
+        }
+
+        fetch(`${apiUrl}/getresourses/get-resourses-names`, requestOptions)
+            .then(response => response.json())
+            .then(result => {
+                
+                generateResourseNamesList(result)
+            })
+            .catch(error => console.log('error', error));
+
+        function generateResourseNamesList(resourseNamesList) {
+            const dropdownMenu = document.getElementById('dropdown-menu-resourses');
+
+            resourseNamesList.resource_names.forEach(resourseName => {
+                const listItem = document.createElement('li');
+                const linkItem = document.createElement('a');
+                linkItem.classList.add('dropdown-item');
+                linkItem.href = '#'; 
+                linkItem.textContent = resourseName;
+
+                linkItem.addEventListener("click", function() {
+                    getArnsByResourse(resourseName)
+                });
+
+                listItem.appendChild(linkItem);
+                dropdownMenu.appendChild(listItem);
+            });
+
+        }
+
+        const awsRegions = [
+            'us-east-1',
+            'us-east-2',
+            'us-west-1',
+            'us-west-2',
+            'ap-south-1',
+            'ap-northeast-3',
+            'ap-northeast-2',
+            'ap-southeast-1',
+            'ap-southeast-2',
+            'ap-northeast-1',
+            'ca-central-1',
+            'eu-central-1',
+            'eu-west-1',
+            'eu-west-2',
+            'eu-west-3',
+            'eu-north-1',
+            'sa-east-1',
+            'af-south-1',
+            'ap-east-1',
+            'ap-south-2',
+            'ap-southeast-3',
+            'ap-southeast-4',
+            'eu-south-1',
+            'eu-south-2',
+            'eu-central-2',
+            'me-south-1',
+            'me-central-1',
+            'il-central-1'
+        ];
+
+        function generateAwsRegions(awsRegions) {
+            const dropdownMenu = document.getElementById('dropdown-menu-regions');
+
+            awsRegions.forEach(region => {
+                const listItem = document.createElement('li');
+                const linkItem = document.createElement('a');
+                linkItem.classList.add('dropdown-item');
+                linkItem.href = '#'; 
+                linkItem.textContent = region;
+                linkItem.addEventListener("click", function() {
+                    getArnsByRegion(region)
+                });
+
+                listItem.appendChild(linkItem);
+                dropdownMenu.appendChild(listItem);
+            });
+
+        }
+
+        generateAwsRegions(awsRegions)
+
+        
+        function getArnsByTags(tagKey) {
+            ClearTableAndOnLoader()
+            if (tagKey === 'all') {
+                const resourse_name = document.getElementById('resourse_name')
+                resourse_name.value = ""
+                fetch(`${apiUrl}/getresourses?page_number=1`, requestOptions)
+                .then(response => response.json())
+                .then(result => {
+                    generateArnsList(result)
+            })
+            .catch(error => console.log('error', error));
+            } else {
+                const raw = JSON.stringify({
+                    "tag_key": tagKey
+                });
+
+                const requestPostOptions = {
+                    method: 'POST',
+                    headers: myHeaders,
+                    body: raw,
+                    redirect: 'follow'
+                };
+
+                fetch(`${apiUrl}/getresourses/by-tag`, requestPostOptions)
+                .then(response => response.json())
+                .then(result => {
+                    generateArnsList(result)
+                })
+                .catch(error => console.log('error', error));
+            }
+        }
+
+        function getArnsByResourse(resourceName) {
+            ClearTableAndOnLoader()
+            const raw = JSON.stringify({
+                "resours_name": resourceName
+            });
+
+            const requestPostOptions = {
+                method: 'POST',
+                headers: myHeaders,
+                body: raw,
+                redirect: 'follow'
+            };
+
+            fetch(`${apiUrl}/getresourses/by-resource`, requestPostOptions)
+            .then(response => response.json())
+            .then(result => {
+                generateArnsList(result)
+            })
+            .catch(error => console.log('error', error));
+        }
+        
+        function getArnsByRegion(region) {
+            ClearTableAndOnLoader()
+            const raw = JSON.stringify({
+                "region": region
+            });
+
+            const requestPostOptions = {
+                method: 'POST',
+                headers: myHeaders,
+                body: raw,
+                redirect: 'follow'
+            };
+
+            fetch(`${apiUrl}/getresourses/by-region`, requestPostOptions)
+            .then(response => response.json())
+            .then(result => {
+                generateArnsList(result)
+            })
+            .catch(error => console.log('error', error));
+        }
+
+        function search() {
+            ClearTableAndOnLoader()
+            const resourse_name = document.getElementById('resourse_name').value
+            const raw = JSON.stringify({
+                "response_name": resourse_name
+            });
+
+            const requestPostOptions = {
+                method: 'POST',
+                headers: myHeaders,
+                body: raw,
+                redirect: 'follow'
+            };
+
+            fetch(`${apiUrl}/getresourses/by-name`, requestPostOptions)
+            .then(response => response.json())
+            .then(result => {
+                generateArnsList(result)
+            })
+            .catch(error => console.log('error', error));
+        }
+
+        function saveTags() {
+            const saveButton = document.getElementById("saveButton");
+            saveButton.textContent = "Loading"
+
+            const headers = document.getElementById('tableHeader')
+            const thElements = tableHeader.getElementsByTagName('th');
+
+            let keysList = [];
+            Array.from(thElements).forEach(th => {
+                const input = th.querySelector('input')
+                const text = th.textContent
+
+                if (text) {
+                    keysList.push(text)
+                }
+                if (input) {
+                    keysList.push(input.value)
+                }
+            });
+
+            const body = document.getElementById('arnList')
+            const trElements = body.getElementsByTagName('tr');
+            
+            let tags = []
+            Array.from(trElements).forEach(tr => {
+                const tdElements = tr.getElementsByTagName('td');
+                let lineTags = {}
+                Array.from(tdElements).forEach((row, index) => {
+                    const text = row.textContent
+                    const input = row.querySelector('input')
+
+                    if (text) {
+                        lineTags[keysList[index]] = text
+                    }
+                    if (input) {
+                        const value = input.value
+                        lineTags[keysList[index]] = value
+                    }
+                })
+
+                Object.keys(lineTags).forEach(key => {
+                    if (lineTags[key] === "") {
+                        delete lineTags[key];
+                    }
+                });
+
+                tags.push(lineTags)
+                
+            })
+
+            tags.forEach(obj => {
+                const arn = obj.Id
+
+                delete obj['Id'];
+
+                const body = {
+                    "arn": arn,
+                    "new_tags": obj
+                }
+
+
+                const myHeaders = new Headers();
+                myHeaders.append("Content-Type", "application/json");
+
+                const raw = JSON.stringify(body);
+
+                const requestOptions = {
+                    method: 'POST',
+                    headers: myHeaders,
+                    body: raw,
+                    redirect: 'follow'
+                };
+
+                fetch(`${apiUrl}/updatetags`, requestOptions)
+                    .then(response => response.text())
+                    .then(result => {})
+                    .catch(error => {
+                        const parsedResult = JSON.parse(result);
+                        alert(parsedResult['error'])
+                    });
+            })
+            alert('Tags updated successfully')
+            saveButton.textContent = "Save"
+            
+        }
+
+    </script>
+  </body>
+</html>
+
+

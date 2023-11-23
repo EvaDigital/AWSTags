@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ARN List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  </head>
+  <style>
+     .center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 10px;
+    }
+    .lds-ring {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 80px;
+    }
+    .lds-ring div {
+        box-sizing: border-box;
+        display: block;
+        position: absolute;
+        width: 64px;
+        height: 64px;
+        margin: 8px;
+        border: 8px solid #383434;
+        border-radius: 50%;
+        animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        border-color: #383434 transparent transparent transparent;
+    }
+    .lds-ring div:nth-child(1) {
+        animation-delay: -0.45s;
+    }
+    .lds-ring div:nth-child(2) {
+        animation-delay: -0.3s;
+    }
+    .lds-ring div:nth-child(3) {
+        animation-delay: -0.15s;
+    }
+    @keyframes lds-ring {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .dropdown-custom {
+        max-height: 300px;
+        overflow-x: auto;
+    }
+
+  </style>
+  <body style="background-color: #ffffff;">
+    <div class="container">
+        <h1>Resources</h1>
+        <div class="center" id="loader">
+            <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+        </div>
+        <div class="row" style="justify-content: end;">
+            <div class="col-3">
+                <form onsubmit="search(); return false">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" placeholder="Resourse name" id="resourse_name" aria-label="Resourse name" aria-describedby="button-addon2">
+                        <input type="submit" class="btn btn-outline-secondary" type="button" id="button-addon2" value="Search">
+                    </div>
+                </form>
+            </div>
+            <div class="col-1" style="margin-right: -1.4em;">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                      Tags
+                    </button>
+                    <ul class="dropdown-menu dropdown-custom" id="dropdown-menu-tags">
+                        <li><a class="dropdown-item" href="#" onclick="getArnsByTags('all')">All</a></li>
+                    </ul>
+                  </div>
+            </div>
+            <div class="col-1" style="margin-right: 0.6em;">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        Resourse
+                    </button>
+                    <ul class="dropdown-menu dropdown-custom" id="dropdown-menu-resourses">
+                        <li><a class="dropdown-item" href="#" onclick="getArnsByTags('all')">All</a></li>
+                    </ul>
+                  </div>
+            </div>
+            <div class="col-1">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        Regions
+                    </button>
+                    <ul class="dropdown-menu dropdown-custom" id="dropdown-menu-regions"></ul>
+                  </div>
+            </div>
+            <div class="col-2" style="width: 140px;">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="getArnsByTags('all')">
+                        Clear filters
+                    </button>
+                  </div>
+            </div>
+        </div>
+
+        <table class="table table-striped-columns">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th style="text-align: center;">Resource</th>
+                    <th style="text-align: center;">Action</th>
+                </tr>
+            </thead>
+            <tbody id="arnList"></tbody>
+        </table>
+        <nav aria-label="Pagination" style="display: flex; justify-content: center;">
+            <ul id="paginationContainer" class="pagination pagination-sm"></ul>
+        </nav>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+
+    <script>
+        const apiUrl = localStorage.getItem('apiUrl');
+        const login = localStorage.getItem('login');
+        if (login === null || login === undefined || login === 'false') {
+            window.location.href = `${apiUrl}/index/login`;
+        }
+
+        const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+
+        const requestOptions = {
+                method: 'GET',
+                headers: myHeaders,
+                redirect: 'follow'
+        };
+
+        //  const test_result = {
+        //     "resources": [
+        //         {
+        //             "arn": "arn:aws:apigateway:eu-central-1::/restapis/1ll1qaon91"
+        //         },
+        //         {
+        //             "arn": "arn:aws:apigateway:eu-central-1::/restapis/1ll1qaon91/stages/prod"
+        //         },
+        //         {
+        //             "arn": "arn:aws:ssm:eu-central-1:640759442768:parameter/cdk-bootstrap/hnb659fds/version"
+        //         },
+        //         {
+        //             "arn": "arn:aws:lambda:eu-central-1:640759442768:function:LambdaStack-UpdateTagsLambda0CB7F453-PNtwRcEw4sbV"
+        //         },
+        //         {
+        //             "arn": "arn:aws:lambda:eu-central-1:640759442768:function:LambdaStack-PageLambdaB2D00528-05BY9wQWPu70"
+        //         },
+        //         {
+        //             "arn": "arn:aws:lambda:eu-central-1:640759442768:function:LambdaStack-LoginLambda25499490-pRGYlw6caaHc"
+        //         },
+        //         {
+        //             "arn": "arn:aws:s3:::test-bucket-1132232"
+        //         },
+        //         {
+        //             "arn": "arn:aws:lambda:eu-central-1:640759442768:function:LambdaStack-GetTagsLambdaC80C7E0D-62ghuoAZIfK2"
+        //         },
+        //         {
+        //             "arn": "arn:aws:lambda:eu-central-1:640759442768:function:LambdaStack-GetTaggedResoursesLambdaF84DABB6-4alPaWlaJiQw"
+        //         },
+        //         {
+        //             "arn": "arn:aws:s3:::cdk-hnb659fds-assets-640759442768-eu-central-1"
+        //         },
+        //         {
+        //             "arn": "arn:aws:sns:eu-central-1:640759442768:testTopic-1221"
+        //         },
+        //         {
+        //             "arn": "arn:aws:sqs:eu-central-1:640759442768:test-q12121"
+        //         }
+        //     ],
+        //     "pagination": {
+        //         "total_pages": 1
+        //     }
+        // }
+        
+        function ClearTableAndOnLoader() {
+            const arnList = document.getElementById('arnList');
+            arnList.innerHTML = '';
+
+            const loaderElement = document.getElementById("loader");
+            loaderElement.style.display = "block";
+        }
+
+        function generateArnsList(result) {
+            const arnList = document.getElementById('arnList');
+            arnList.innerHTML = '';
+
+            if (result.resources && result.resources.length > 0) {
+                function parseArn(arn) {
+                    const arnParts = arn.split(":");
+                    const service = arnParts[2];
+                    const resource = arnParts.slice(5).join(":");
+                    return { service, resource };
+                }
+
+                const parsedArns = result.resources.map(resource => {
+                    const parsedArn = parseArn(resource.arn);
+                    parsedArn.fullArn = resource.arn; 
+                    return parsedArn;
+                });
+
+                const arnListContainer = document.getElementById("arnList");
+
+                parsedArns.forEach(parsedArn => {
+                    const row = document.createElement("tr");
+
+                    const serviceNameCell = document.createElement("td");
+                    serviceNameCell.textContent =  parsedArn.resource;
+                    row.appendChild(serviceNameCell);
+
+                    const resourceCell = document.createElement("td");
+                    resourceCell.style = 'text-align: center;'
+                    resourceCell.textContent = parsedArn.service.charAt(0).toUpperCase() + parsedArn.service.slice(1);
+                    row.appendChild(resourceCell);
+
+                    const editCell = document.createElement("td");
+                    editCell.style = 'text-align: center;'
+                    const editButton = document.createElement("button");
+                    editButton.className = 'btn btn-primary'
+                    editButton.textContent = "Edit";
+                    editButton.addEventListener("click", function() {
+                        const fullArn = row.getAttribute("data-full-arn");
+                        localStorage.setItem('arn', fullArn);
+                        window.location.href = `${apiUrl}/index/tags`;
+                    });
+                    editCell.appendChild(editButton);
+                    row.appendChild(editCell);
+
+                    row.setAttribute("data-full-arn", parsedArn.fullArn);
+
+                    arnListContainer.appendChild(row);
+
+                    const loaderElement = document.getElementById("loader");
+                    loaderElement.style.display = "none";
+
+                });
+            } else {
+                const loaderElement = document.getElementById("loader");
+                loaderElement.style.display = "none";
+
+                const paginationContainer = document.getElementById('paginationContainer');
+                paginationContainer.innerHTML = ''
+
+                const arnListContainer = document.getElementById("arnList");
+                const row = arnListContainer.insertRow();
+                row.style = 'text-align: center;'
+                const cell = row.insertCell(0);
+                cell.colSpan = 3;
+                cell.textContent = "No data";
+                arnListContainer.appendChild(row)
+            }
+
+        }
+
+        fetch(`${apiUrl}/getresourses?page_number=1`, requestOptions)
+            .then(response => response.json())
+            .then(result => {
+                generateArnsList(result)
+
+                const paginationContainer = document.getElementById('paginationContainer');
+                const pageCount = result.pagination.total_pages
+                for (let i = 1; i <= pageCount; i++) {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'page-item';
+                    listItem.innerHTML = `<a class="page-link" href="#" onclick="onPageButtonClick(${i})">${i}</a>`;
+                    paginationContainer.appendChild(listItem);
+                }
+
+            })
+            .catch(error => console.log('error', error));
+
+        function onPageButtonClick(page) {
+            fetch(`${apiUrl}/getresourses?page_number=${page}`, requestOptions)
+            .then(response => response.json())
+            .then(result => {
+                generateArnsList(result)
+            })
+            .catch(error => console.log('error', error));
+        }
+
+        fetch(`${apiUrl}/getresourses/get-tags-keys`, requestOptions)
+            .then(response => response.json())
+            .then(result => {
+                generateTagsList(result)
+            })
+            .catch(error => console.log('error', error));
+
+        function generateTagsList(tagsList) {
+            const dropdownMenu = document.getElementById('dropdown-menu-tags');
+
+            tagsList.keys.forEach(tagKey => {
+                const listItem = document.createElement('li');
+                const linkItem = document.createElement('a');
+                linkItem.classList.add('dropdown-item');
+                linkItem.href = '#'; 
+                linkItem.textContent = tagKey;
+
+                linkItem.addEventListener("click", function() {
+                    getArnsByTags(tagKey)
+                });
+
+                listItem.appendChild(linkItem);
+                dropdownMenu.appendChild(listItem);
+            });
+
+        }
+
+        fetch(`${apiUrl}/getresourses/get-resourses-names`, requestOptions)
+            .then(response => response.json())
+            .then(result => {
+                generateResourseNamesList(result)
+            })
+            .catch(error => console.log('error', error));
+
+        function generateResourseNamesList(resourseNamesList) {
+            const dropdownMenu = document.getElementById('dropdown-menu-resourses');
+
+            resourseNamesList.resource_names.forEach(resourseName => {
+                const listItem = document.createElement('li');
+                const linkItem = document.createElement('a');
+                linkItem.classList.add('dropdown-item');
+                linkItem.href = '#'; 
+                linkItem.textContent = resourseName;
+
+                linkItem.addEventListener("click", function() {
+                    getArnsByResourse(resourseName)
+                });
+
+                listItem.appendChild(linkItem);
+                dropdownMenu.appendChild(listItem);
+            });
+
+        }
+
+        const awsRegions = [
+            'us-east-1',
+            'us-east-2',
+            'us-west-1',
+            'us-west-2',
+            'ap-south-1',
+            'ap-northeast-3',
+            'ap-northeast-2',
+            'ap-southeast-1',
+            'ap-southeast-2',
+            'ap-northeast-1',
+            'ca-central-1',
+            'eu-central-1',
+            'eu-west-1',
+            'eu-west-2',
+            'eu-west-3',
+            'eu-north-1',
+            'sa-east-1',
+            'af-south-1',
+            'ap-east-1',
+            'ap-south-2',
+            'ap-southeast-3',
+            'ap-southeast-4',
+            'eu-south-1',
+            'eu-south-2',
+            'eu-central-2',
+            'me-south-1',
+            'me-central-1',
+            'il-central-1'
+        ];
+
+        function generateAwsRegions(awsRegions) {
+            const dropdownMenu = document.getElementById('dropdown-menu-regions');
+
+            awsRegions.forEach(region => {
+                const listItem = document.createElement('li');
+                const linkItem = document.createElement('a');
+                linkItem.classList.add('dropdown-item');
+                linkItem.href = '#'; 
+                linkItem.textContent = region;
+                linkItem.addEventListener("click", function() {
+                    getArnsByRegion(region)
+                });
+
+                listItem.appendChild(linkItem);
+                dropdownMenu.appendChild(listItem);
+            });
+
+        }
+
+        generateAwsRegions(awsRegions)
+
+        
+        function getArnsByTags(tagKey) {
+            ClearTableAndOnLoader()
+            if (tagKey === 'all') {
+                const resourse_name = document.getElementById('resourse_name')
+                resourse_name.value = ""
+                fetch(`${apiUrl}/getresourses?page_number=1`, requestOptions)
+                .then(response => response.json())
+                .then(result => {
+                    generateArnsList(result)
+
+                    const paginationContainer = document.getElementById('paginationContainer');
+                    paginationContainer.innerHTML = ''
+                    const pageCount = result.pagination.total_pages
+                    for (let i = 1; i <= pageCount; i++) {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'page-item';
+                        listItem.innerHTML = `<a class="page-link" href="#" onclick="onPageButtonClick(${i})">${i}</a>`;
+                        paginationContainer.appendChild(listItem);
+                    }
+            })
+            .catch(error => console.log('error', error));
+            } else {
+                const raw = JSON.stringify({
+                    "tag_key": tagKey
+                });
+
+                const requestPostOptions = {
+                    method: 'POST',
+                    headers: myHeaders,
+                    body: raw,
+                    redirect: 'follow'
+                };
+
+                fetch(`${apiUrl}/getresourses/by-tag`, requestPostOptions)
+                .then(response => response.json())
+                .then(result => {
+                    generateArnsList(result)
+                })
+                .catch(error => console.log('error', error));
+            }
+        }
+
+        function getArnsByResourse(resourceName) {
+            ClearTableAndOnLoader()
+            const raw = JSON.stringify({
+                "resours_name": resourceName
+            });
+
+            const requestPostOptions = {
+                method: 'POST',
+                headers: myHeaders,
+                body: raw,
+                redirect: 'follow'
+            };
+
+            fetch(`${apiUrl}/getresourses/by-resource`, requestPostOptions)
+            .then(response => response.json())
+            .then(result => {
+                generateArnsList(result)
+            })
+            .catch(error => console.log('error', error));
+        }
+        
+        function getArnsByRegion(region) {
+            ClearTableAndOnLoader()
+            const raw = JSON.stringify({
+                "region": region
+            });
+
+            const requestPostOptions = {
+                method: 'POST',
+                headers: myHeaders,
+                body: raw,
+                redirect: 'follow'
+            };
+
+            fetch(`${apiUrl}/getresourses/by-region`, requestPostOptions)
+            .then(response => response.json())
+            .then(result => {
+                generateArnsList(result)
+            })
+            .catch(error => console.log('error', error));
+        }
+
+        function search() {
+            ClearTableAndOnLoader()
+            const resourse_name = document.getElementById('resourse_name').value
+            const raw = JSON.stringify({
+                "response_name": resourse_name
+            });
+
+            const requestPostOptions = {
+                method: 'POST',
+                headers: myHeaders,
+                body: raw,
+                redirect: 'follow'
+            };
+
+            fetch(`${apiUrl}/getresourses/by-name`, requestPostOptions)
+            .then(response => response.json())
+            .then(result => {
+                generateArnsList(result)
+            })
+            .catch(error => console.log('error', error));
+        }
+
+
+    </script>
+  </body>
+</html>
+
+

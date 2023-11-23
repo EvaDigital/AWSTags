@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  </head>
+  <style>
+    .center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 10px;
+    }
+    .login-form {
+        width: 400px;
+        height: 400px;
+        background-color: #eeeeee;
+        align-items: center;
+        display: flex;
+        text-align: center;
+        justify-content: center;
+        padding: 2em;
+        border-radius: 30px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    input {
+        width: 100%;
+        box-sizing: border-box;
+        border: none;
+        outline: none;
+    }
+    
+  </style>
+  <body style="background-color: #ffffff;">
+    <div class="container">
+        <div class="center" id="loginForm">
+            <div class="login-form">   
+                <form>
+                    <div class="form-outline mb-4">
+                      <input type="email" id="login" class="form-control" placeholder="login"/>
+                    </div>
+                  
+                    <div class="form-outline mb-4">
+                      <input type="password" id="password" class="form-control" placeholder="password"/>
+                    </div> 
+                  
+                    <button type="button" class="btn btn-primary btn-block mb-4" onclick="attemptLogin()">Sign in</button>
+                   
+                  </form>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+
+    <script>
+        const currentUrl = window.location.href;
+        const urlObject = new URL(currentUrl);
+        const apiUrl = `${urlObject.protocol}//${urlObject.host}${urlObject.pathname.split('/index/')[0]}`;
+
+        localStorage.setItem('apiUrl', apiUrl);
+
+        function attemptLogin() {
+            const login = document.getElementById("login").value
+            const password = document.getElementById("password").value
+            
+            const myHeaders = new Headers();
+            myHeaders.append("Content-Type", "application/json");
+
+            const raw = JSON.stringify({
+                "login": login,
+                "password": password
+            });
+
+            const requestOptions = {
+                method: 'POST',
+                headers: myHeaders,
+                body: raw,
+                redirect: 'follow'
+            };
+
+            fetch(`${apiUrl}/login`, requestOptions)
+            .then(response => response.json())
+            .then(result => {
+                localStorage.setItem('login', true);
+                window.location.href = `${apiUrl}/index/home`;
+            })
+            .catch(error => console.log('error', error));
+        }
+
+    </script>
+  </body>
+</html>
