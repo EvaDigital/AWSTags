@@ -70,7 +70,7 @@ $ source env/bin/activate
 If you are a Windows platform, you would activate the virtualenv like this:
 
 ```
-% env\Scripts\activate.bat
+% .\env\Scripts\activate
 ```
 
 ## 6. Install dependencies
