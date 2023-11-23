@@ -18,7 +18,7 @@ Verify that Node.js and npm are installed successfully.
 ### Python
 Download the Python installer from the [official website](https://www.python.org/)
 Run the installer and select the "Add Python to PATH" option during installation.
-
+**The Python Installation Wizard will open. Ensure that you check the box that says "Add Python to PATH" during the installation**
 ### Check the installation
 Open the command prompt and run the following commands:
 ```
